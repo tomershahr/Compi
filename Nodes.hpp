@@ -64,13 +64,14 @@ public:
 };
 
 class  Arguments: public Node{
-public:
 
+public:
     vector<string> types;
     vector<string> names;
-    Arguments(Node* n1,Node* n2): Node(),types(),names(){
-        Type* type = (Type*)n1;
-        Id* id = (Id*)n2;
+
+    Arguments(Node* n_type,Node* n_id): Node(),types(),names(){
+        Type* type = (Type*)n_type;
+        Id* id = (Id*)n_id;
         types.push_back(type->type);
         names.push_back(id->name);
     }
@@ -79,12 +80,24 @@ public:
         Arguments* a2 = (Arguments*)node;
         this->types.insert(this->types.end(), a2->types.begin(), a2->types.end());
         this->names.insert(this->names.end(), a2->names.begin(), a2->names.end());
-
-
         return this;
     }
+};
 
+class ExpList: public Node{
+    public:
+        vector<string> types;
 
+        ExpList(Node* type): Node(), types(){
+            string name = ((Type*)type)->type;
+            types.push_back(name);
+        }
+
+        ExpList* merge(Node* node){
+            ExpList* exp1 = (ExpList*) node;
+            this->types.insert(this->types.end(), a2->types.begin(), a2->types.end());
+            return this;
+        }
 };
 
 

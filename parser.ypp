@@ -138,8 +138,8 @@ Statement : LBRACE Statements RBRACE {}
 Call : ID LPAREN ExpList RPAREN {printProductionRule(27);}
 	 | ID LPAREN RPAREN {printProductionRule(28);};
 
-ExpList : Exp {printProductionRule(29);}
-		| Exp COMMA ExpList {printProductionRule(30);};
+ExpList : Exp {$$ = new ExpList($1;)}
+		| Exp COMMA ExpList {$$ = ((ExpList*)$1)->merge($3);};
 
 Type : INT {$$ = $1;}
 	 | BYTE {$$ = $1;}
