@@ -8,9 +8,18 @@
 #include <string>
 #include <vector>
 #include <iostream>
-
 using namespace std;
 
+
+########################Utilitues Functions########################
+
+bool compareTypes(Node* token, string type){
+    string node_type = (Type*)token->type;
+    return node_type == type;
+}
+
+
+#######################classes######################################
 class Node{
 };
 
