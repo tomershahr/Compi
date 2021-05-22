@@ -60,17 +60,19 @@ public:
         curr_offset =-1;
     }
 
-    bool findSymbol(string name){
+    bool findSymbol(string name,Entry& entry){
         for(unsigned int j =0;j<tables.size();j++) {
             Table curr = tables[j];
             for (unsigned int i = 0; i < curr.size(); i++) {
-                if (curr[i].name.compare(name) == 0)
+                if (curr[i].name.compare(name) == 0){
+                    entry = curr[i];
                     return true;
+                }
             }
-
         }
         return false;
     }
+
     string getSymbolType(string symbol){
         for(unsigned int j =0;j<tables.size();j++) {
             Table curr = tables[j];

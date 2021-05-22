@@ -169,8 +169,15 @@ Exp : LPAREN Exp RPAREN {$$ = $2}
 
 
 	| ID {
-	        }
-	| Call {printProductionRule(37);}
+	    string name = (Id*)$1->name;
+	    Entry entry;
+	    if(!symbols_tables.findSymbol(name, &entry) || (entry.is_func))
+            {errorUndef(yylineno, name); exit(0);}
+	     $$ = new Type(entry.type);
+        }
+
+
+	| Call {$$=$1}
 
 	| NUM {
 	    $$ = new Type("INT");
