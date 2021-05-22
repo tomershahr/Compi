@@ -12,6 +12,7 @@
 	extern char* yytext;
 	void yyerror(const char*);
 	SymbolTables symbols_tables;
+	string ret_type; //curr function ret type
 
 %}
 
@@ -61,9 +62,11 @@ FuncDecl : FuncDecl1 FuncDec2 {};
 
 FuncDecl1 : RetType ID LPAREN Formals RPAREN LBRACE {
                                                       string func_name = ((Id*)$2)->name;
+                                                      ret_type  =((Type*)$1)->type;
                                                       if(symbols_tables.findSymbol(func_name)){
                                                             errorDef(yylineno, func_name); exit(0);
                                                       }
+
                                                       if($4== nullptr){
 
                                                           symbols_tables.insertFuncEntry(func_name, ((Type*)$1)->type, vector<string>());
@@ -111,13 +114,18 @@ Statement : LBRACE Statements RBRACE {}
 		    errorDef(yylineno, name); exit(0);
 			}
 		  symbols_tables.insertEntry(name, type);
-		  };
+		  }
 /*
 		  | Type ID ASSIGN Exp SC {}
 		  | ID ASSIGN Exp SC {}
 		  | Call SC {}
-		  | RETURN SC {}
-		  | RETURN Exp SC {}
+	*/
+		  | RETURN SC { if(ret_type.compare("VOID")!=0){errorMismatch(yylineno); exit(0);} }
+/*
+		  | RETURN Exp SC { string type = ((Type*)$2)->type;
+		  if(ret_type.compare(type)!=0){errorMismatch(yylineno); exit(0);}}
+
+
 		  | IF LPAREN Exp RPAREN Statement {}
 		  | IF LPAREN Exp RPAREN Statement ELSE Statement {}
 		  | WHILE LPAREN Exp RPAREN Statement {}
