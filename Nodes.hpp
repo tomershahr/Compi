@@ -11,22 +11,16 @@
 using namespace std;
 
 
-########################Utilitues Functions########################
-
-bool compareTypes(Node* token, string type){
-    string node_type = (Type*)token->type;
-    return node_type == type;
-}
 
 
-#######################classes######################################
+//--------------------------------classes--------------------------//
 class Node{
 };
 
 class Num : public Node{
 public:
     int value;
-    Num(char* val): Node(), value(stoi(val)){}
+    Num(char* val): value(stoi(val)){}
 };
 
 class NumB : public Num{
@@ -91,6 +85,22 @@ public:
     }
 
 
+};
+
+
+//--------------------------------Utilities Functions--------------------------//
+
+bool compareTypes(Node* token, string type){
+    string node_type = (Type*)token->type;
+    return (node_type == type);
+};
+
+
+
+
+bool isNumber(Node* token){
+    if(compareTypes(token,"INT") || compareTypes(token,"BYTE")) return true;
+    return false;
 };
 
 
