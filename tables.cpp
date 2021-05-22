@@ -38,8 +38,12 @@ class SymbolTables{
 
 public:
     SymbolTables(): curr_offset(0){
-        tables.push_back(Table());
+        Table global;
+        global.push_back(Entry("print", "VOID",vector<string>(1, "STRING")));
+        global.push_back(Entry("printi", "VOID",vector<string>(1, "INT")));
+        tables.push_back(global);
         offsets.push_back(0);
+
     }
 
     void insertEntry( string name, string type){

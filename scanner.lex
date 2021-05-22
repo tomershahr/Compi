@@ -64,7 +64,7 @@ default						return DEFAULT;
 [\+-]                       return PLUS_MINUS;
 {id}                        {yylval = new Id(string(yytext));return ID;}
 {num}                       return NUM;
-{string}                    return STRING;
+{string}                    {yylval = new Type(string("STRING"));return STRING;}
 {comment}                   ;
 {whitespace}                ;
 .                           {output::errorLex(yylineno);exit(0);};
