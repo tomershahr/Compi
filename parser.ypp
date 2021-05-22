@@ -69,7 +69,7 @@ FuncDecl1 : RetType ID LPAREN Formals RPAREN LBRACE {
                                                             errorDef(yylineno, func_name); exit(0);
                                                       }
 
-                                                      if($4== nullptr){
+                                                      if($4 == nullptr){
 
                                                           symbols_tables.insertFuncEntry(func_name, ((Type*)$1)->type, vector<string>());
                                                        }
@@ -141,27 +141,82 @@ Call : ID LPAREN ExpList RPAREN {printProductionRule(27);}
 ExpList : Exp {printProductionRule(29);}
 		| Exp COMMA ExpList {printProductionRule(30);};
 
-
-*/
 Type : INT {$$ = $1;}
 	 | BYTE {$$ = $1;}
 	 | BOOL {$$ = $1;};
-/*
-Exp : LPAREN Exp RPAREN {printProductionRule(34);}
-    | Exp MULT_DIV Exp {printProductionRule(35);}
-	| Exp PLUS_MINUS Exp {printProductionRule(35);}
-	| ID {printProductionRule(36);}
+
+Exp : LPAREN Exp RPAREN {$$ = $2}
+
+    | Exp MULT_DIV Exp {
+	    if(!isNumber($1) || !isNumber($3))
+    	        {errorMismatch(yylineno);exit(0);}
+    	if(compareTypes($1,"INT")|| compareTypes($2,"INT"))
+    	    {$$ = new Type("INT");}
+    	else{$$ = new Type("BYTE");}
+    	delete $1;
+    	delete $3;
+    }
+
+	| Exp PLUS_MINUS Exp {
+	        if(!isNumber($1) || !isNumber($3))
+        	        {errorMismatch(yylineno);exit(0);}
+        	if(compareTypes($1,"INT")|| compareTypes($2,"INT"))
+        	    {$$ = new Type("INT");}
+        	else{$$ = new Type("BYTE");}
+        	delete $1;
+        	delete $3;
+	}
+
+
+	| ID {
+	        }
 	| Call {printProductionRule(37);}
-	| NUM {printProductionRule(38);}
-	| NUM B {printProductionRule(39);}
-	| STRING {printProductionRule(40);}
-	| TRUE {printProductionRule(41);}
-	| FALSE {printProductionRule(42);}
-	| NOT Exp {printProductionRule(43);}
-	| Exp AND Exp {printProductionRule(44);}
-	| Exp OR Exp {printProductionRule(45);}
-	| Exp EQUALITY_RELOP Exp {printProductionRule(46);}
-	| Exp RELATION_RELOP Exp {printProductionRule(46);}
+
+	| NUM {
+	    $$ = new Type("INT");
+	}
+	| NUM B {
+	    if((Num*)$1->value > 255)
+	        {errorByteTooLarge(yylineno);exit(0);}
+	    $$ = new Type("BYTE");
+	}
+
+	| STRING {$$ = new Type("STRING");}
+
+	| TRUE {$$ = new Type("BOOL");}
+
+	| FALSE {$$ = new Type("BOOL");}
+
+	| NOT Exp {
+	    if(!compareTypes($2,"BOOL")
+	    {errorMismatch(yylineno);exit(0);}
+	    $$ = $2;
+	}
+
+	| Exp AND Exp {
+	    if(!compareTypes($1,"BOOL") || !compareTypes($3,"BOOL"))
+	    {errorMismatch(yylineno);exit(0);}
+	    $$ = $1;
+	}
+
+	| Exp OR Exp {
+        if(!compareTypes($1,"BOOL") || !compareTypes($3,"BOOL"))
+        {errorMismatch(yylineno);exit(0);}
+        $$ = $1;
+    }
+
+	| Exp EQUALITY_RELOP Exp {
+	    if(!isNumber($1) || !isNumber($3))
+	        {errorMismatch(yylineno);exit(0);}
+	    $$ = new Type("BOOL");
+	}
+
+	| Exp RELATION_RELOP Exp {
+	    if(!isNumber($1) || !isNumber($3))
+    	        {errorMismatch(yylineno);exit(0);}
+    	$$ = new Type("BOOL");
+    }
+
 
 
 CaseList : CaseDecl CaseList {printProductionRule(48);}
