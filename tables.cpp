@@ -14,7 +14,7 @@ public:
     int offset;
     vector<string> args_types;
     bool is_func;
-
+    Entry(){}
     Entry(string _name,string _type,int _offset) : name(_name), type(_type), offset(_offset), args_types(vector<string>()),  is_func(false){} //for varible
 
     Entry(string _name,string _type, vector<string> args): name(_name), type(_type), offset(0), args_types(args), is_func(true){} //for func
@@ -64,12 +64,14 @@ public:
         curr_offset =-1;
     }
 
-    bool findSymbol(string name,Entry& entry){
+    bool findSymbol(string name,Entry* entry=nullptr){
         for(unsigned int j =0;j<tables.size();j++) {
             Table curr = tables[j];
             for (unsigned int i = 0; i < curr.size(); i++) {
                 if (curr[i].name.compare(name) == 0){
-                    entry = curr[i];
+                    if(entry!=nullptr){
+                        entry = &curr[i];
+                    }
                     return true;
                 }
             }

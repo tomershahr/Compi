@@ -1,7 +1,7 @@
 %{
 /* Declarations section */
 #include <stdio.h>
-#include "Nodes.hpp"
+#include "Nodes.cpp"
 #include "hw3_output.hpp"
 #include "parser.tab.hpp"
 
@@ -33,14 +33,14 @@ string         (\"([^\n\r\"\\]|\\[rnt"\\])+\")
 %%
 void                        {yylval = new Type(string("VOID")); return VOID;}
 int                         {yylval = new Type(string("INT"));return INT;}
-byte                        {yylval = new Type(string("BYTE"));return BYTE;}
-b                           return B;
+byte                         return BYTE;
+b                            {yylval = new Type(string("BYTE"));return B;}
 bool                        {yylval = new Type(string("BOOL"));return BOOL;}
 and                         return AND;
 or                          return OR;
 not                         return NOT;
-true                        return TRUE;
-false                       return FALSE;
+true                          {yylval = new Type(string("BOOL"));return TRUE;}
+false                         {yylval = new Type(string("BOOL"));return FALSE;}
 return                      return RETURN;
 if                          return IF;
 else                        return ELSE;
@@ -63,7 +63,7 @@ default						return DEFAULT;
 [\*\/]						return MULT_DIV;
 [\+-]                       return PLUS_MINUS;
 {id}                        {yylval = new Id(string(yytext));return ID;}
-{num}                       return NUM;
+{num}                       {yylval = new Num(string(yytext));return NUM;}
 {string}                    {yylval = new Type(string("STRING"));return STRING;}
 {comment}                   ;
 {whitespace}                ;

@@ -1,5 +1,5 @@
 %{
-    #include "Nodes.hpp"
+    #include "Nodes.cpp"
 	#include <iostream>
 	#include "hw3_output.hpp"
 	#include "tables.cpp"
@@ -115,39 +115,69 @@ Statement : LBRACE Statements RBRACE {}
 		  if(symbols_tables.findSymbol(name)){
 		    errorDef(yylineno, name); exit(0);
 			}
-		  symbols_tables.insertEntry(name, type);
-		  }
-/*
+		  symbols_tables.insertEntry(name, type);}
 		  | Type ID ASSIGN Exp SC {}
 		  | ID ASSIGN Exp SC {}
 		  | Call SC {}
-	*/
 		  | RETURN SC { if(ret_type.compare("VOID")!=0){errorMismatch(yylineno); exit(0);} }
-/*
+
 		  | RETURN Exp SC { string type = ((Type*)$2)->type;
-		  if(ret_type.compare(type)!=0){errorMismatch(yylineno); exit(0);}}
+		                    if(ret_type.compare(type)!=0){errorMismatch(yylineno); exit(0);}};
 
-
+/*
 		  | IF LPAREN Exp RPAREN Statement {}
 		  | IF LPAREN Exp RPAREN Statement ELSE Statement {}
 		  | WHILE LPAREN Exp RPAREN Statement {}
 		  | BREAK SC {}
 		  | CONTINUE SC {}
 		  | SWITCH LPAREN Exp RPAREN LBRACE CaseList RBRACE {};
+*/
+Call : ID LPAREN ExpList RPAREN { string id = ((Id*)$1)->name;
+                                   Entry* entry;
+                                    bool is_symbol = symbols_tables.findSymbol(id, entry);
+                                   if(!is_symbol || !entry->is_func){//todo: check if ID is not a func
+                                    errorUndefFunc(yylineno, id);
+                                    exit(0);
+                                   }
+                                  vector<string> exp_types = ((ExpList*)$3)->types;
+                                  vector<string> func_types = entry->args_types;
+                                  if(exp_types != func_types){
+                                    errorPrototypeMismatch(yylineno, id, func_types);
+                                    exit(0);
+                                  }
 
-Call : ID LPAREN ExpList RPAREN {printProductionRule(27);}
-	 | ID LPAREN RPAREN {printProductionRule(28);};
+                        }
+	 | ID LPAREN RPAREN {   string id = ((Id*)$1)->name;
+                            Entry* entry;
+                             bool is_symbol = symbols_tables.findSymbol(id, entry);
+                            if(!is_symbol || !entry->is_func){
+                             errorUndefFunc(yylineno, id);
+                             exit(0);
+                            }
+                            if(!entry->args_types.empty())
+                                errorPrototypeMismatch(yylineno, id, entry->args_types); //todo: need to check if it the correct error.
+                                exit(0);
+                            };
 
-ExpList : Exp {$$ = new ExpList($1;)}
+ExpList : Exp {$$ = new ExpList($1);}
 		| Exp COMMA ExpList {$$ = ((ExpList*)$1)->merge($3);};
 
 Type : INT {$$ = $1;}
 	 | BYTE {$$ = $1;}
 	 | BOOL {$$ = $1;};
 
-Exp : LPAREN Exp RPAREN {$$ = $2}
+Exp : LPAREN Exp RPAREN {$$ = $2;}
 
     | Exp MULT_DIV Exp {
+		Type * e1 = (Type*)$1;
+		Type * e2 = (Type*)$3;
+		if(e2->type.compare(e1->type))
+
+
+
+
+
+
 	    if(!isNumber($1) || !isNumber($3))
     	        {errorMismatch(yylineno);exit(0);}
     	if(compareTypes($1,"INT")|| compareTypes($2,"INT"))
@@ -169,33 +199,36 @@ Exp : LPAREN Exp RPAREN {$$ = $2}
 
 
 	| ID {
-	    string name = (Id*)$1->name;
-	    Entry entry;
-	    if(!symbols_tables.findSymbol(name, &entry) || (entry.is_func))
+	    string name = ((Id*)$1)->name;
+	    Entry* entry;
+		bool is_symbol =symbols_tables.findSymbol(name, entry);
+	    if(!is_symbol || (entry->is_func))
             {errorUndef(yylineno, name); exit(0);}
-	     $$ = new Type(entry.type);
+	     $$ = new Type(entry->type);
         }
 
 
-	| Call {$$=$1}
+	| Call {$$=$1;}
 
 	| NUM {
 	    $$ = new Type("INT");
 	}
 	| NUM B {
-	    if((Num*)$1->value > 255)
-	        {errorByteTooLarge(yylineno);exit(0);}
-	    $$ = new Type("BYTE");
+		int val =((Num*)$1)->value;
+		string str = to_string(val);
+	    if( val> 255)
+	        {errorByteTooLarge(yylineno, str );exit(0);}
+	    $$ =$2;
 	}
 
-	| STRING {$$ = new Type("STRING");}
+	| STRING {$$ =$1;}
 
-	| TRUE {$$ = new Type("BOOL");}
+	| TRUE {$$ = $1;}
 
-	| FALSE {$$ = new Type("BOOL");}
+	| FALSE {$$ = $1 ;}
 
 	| NOT Exp {
-	    if(!compareTypes($2,"BOOL")
+	    if(!compareTypes($2,"BOOL"))
 	    {errorMismatch(yylineno);exit(0);}
 	    $$ = $2;
 	}
@@ -225,7 +258,7 @@ Exp : LPAREN Exp RPAREN {$$ = $2}
     }
 
 
-
+/*
 CaseList : CaseDecl CaseList {printProductionRule(48);}
 		 | CaseDecl {printProductionRule(49);}
 		 | DEFAULT COLON Statements {printProductionRule(50);};
