@@ -71,13 +71,54 @@ public:
         }
         return false;
     }
+    string getSymbolType(string symbol){
+        for(unsigned int j =0;j<tables.size();j++) {
+            Table curr = tables[j];
+            for (unsigned int i = 0; i < curr.size(); i++) {
+                if (curr[i].name.compare(symbol) == 0)
+                    return curr[i].type;
+            }
+        }
+        return "";
+    }
+
+    vector<string> getFuncArgs(string func){
+        for(unsigned int j =0;j<tables.size();j++) {
+            Table curr = tables[j];
+            for (unsigned int i = 0; i < curr.size(); i++) {
+                if (curr[i].name.compare(func) == 0)
+                    return curr[i].args_types;
+            }
+        }
+        return vector<string>();
+    }
+/*
+    bool isValidMain(){
+
+        for(unsigned int i= 0; i<tables[0].size();i++){
+            if (tables[0][i].name.compare("main"){
+                if(!tables[0][i].type.compare("VOID") || !tables[0][i].args_types.empty())
+                    return false;
+                return true;
+            }
+        }
+        return false;
+    }
+    */
 
     void closeScope(){
         endScope();
-        Table table = tables[1];
+        Table table = tables.back();
         for(unsigned int i=0; i< table.size(); i++){
-            if(!table[i].is_func)
-                printID(table[i].name, table[i].offset, table[i].type);
+            string name = table[i].name;
+            string types =  table[i].type;
+
+            if(table[i].is_func){
+                vector<string> args = getFuncArgs(name);
+                types =makeFunctionType(types, args);
+            }
+
+            printID(name , table[i].offset, types);
         }
         offsets.pop_back();
         tables.pop_back();

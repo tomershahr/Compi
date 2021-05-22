@@ -51,7 +51,9 @@
 
 
 %%
-Program : Funcs {};
+Program : Funcs {   if(symbols_tables.getSymbolType("main").compare("VOID")!=0 || !symbols_tables.getFuncArgs("main").empty() ){errorMainMissing(); exit(0);}
+                    symbols_tables.closeScope();
+                };
 Funcs : {}
 	  | FuncDecl Funcs {};
 
