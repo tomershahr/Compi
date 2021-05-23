@@ -33,7 +33,7 @@ string         (\"([^\n\r\"\\]|\\[rnt"\\])+\")
 %%
 void                        {yylval = new Type(string("VOID")); return VOID;}
 int                         {yylval = new Type(string("INT"));return INT;}
-byte                         return BYTE;
+byte                         {yylval = new Type(string("BYTE"));return BYTE;}
 b                            {yylval = new Type(string("BYTE"));return B;}
 bool                        {yylval = new Type(string("BOOL"));return BOOL;}
 and                         return AND;

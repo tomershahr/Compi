@@ -118,8 +118,39 @@ Statement : LBRACE Statements RBRACE {}
 		    errorDef(yylineno, name); exit(0);
 			}
 		  symbols_tables.insertEntry(name, type);}
-		  | Type ID ASSIGN Exp SC {}
-		  | ID ASSIGN Exp SC {}
+
+		  | Type ID ASSIGN Exp SC {
+									string id1 = ((Id*)$2)->name;
+
+									if(symbols_tables.findSymbol(id1)){
+										  errorDef(yylineno, id1);
+										  exit(0);
+									}
+									string type1 = ((Type*)$1)->type;
+									string type2 = ((Type*)$4)->type;
+									if(type1.compare(type2)!=0){
+										errorMismatch(yylineno);
+										exit(0);
+									}
+									symbols_tables.insertEntry(id1, type1);
+									$$= new Type(type1);
+									delete $1;
+									delete $2;
+									delete $4;
+								}
+
+		  | ID ASSIGN Exp SC { string id1 = ((Id*)$1)->name;
+		                        Entry entry1;
+                                if(!symbols_tables.findSymbol(id1, &entry1) || entry1.is_func){
+                                      errorUndef(yylineno, id1);
+                                      exit(0);
+                                }
+                                string type2 = ((Type*)$3)->type;
+                                if(entry1.type.compare(type2)!=0 &&(!compareTypes($1, "INT") || !compareTypes($3, "BYTE"))){
+                                    errorMismatch(yylineno);
+                                    exit(0);
+                                }
+		  }
 		  | Call SC {}
 		  | RETURN SC { if(ret_type.compare("VOID")!=0){errorMismatch(yylineno); exit(0);} }
 
@@ -148,8 +179,10 @@ Call : ID LPAREN ExpList RPAREN { string id = ((Id*)$1)->name;
                                     errorPrototypeMismatch(yylineno, id, func_types);
                                     exit(0);
                                   }
+								  $$=new Type(entry.type);
 
                         }
+
 	 | ID LPAREN RPAREN {   string id = ((Id*)$1)->name;
                             Entry entry;
                              bool is_symbol = symbols_tables.findSymbol(id, &entry);
@@ -162,8 +195,11 @@ Call : ID LPAREN ExpList RPAREN { string id = ((Id*)$1)->name;
                                 exit(0);
                             };
 
-ExpList : Exp {$$ = new ExpList($1);}
-		| Exp COMMA ExpList {$$ = ((ExpList*)$1)->merge($3);};
+ExpList : Exp {$$ = new ExpList($1);delete $1;}
+		| Exp COMMA ExpList {	ExpList* list1 =new ExpList($1);
+								$$ = list1->merge($3);
+								delete $1; delete $3;
+								};
 
 Type : INT {$$ = $1;}
 	 | BYTE {$$ = $1;}
@@ -172,14 +208,6 @@ Type : INT {$$ = $1;}
 Exp : LPAREN Exp RPAREN {$$ = $2;}
 
     | Exp MULT_DIV Exp {
-		Type * e1 = (Type*)$1;
-		Type * e2 = (Type*)$3;
-		if(e2->type.compare(e1->type))
-
-
-
-
-
 
 	    if(!isNumber($1) || !isNumber($3))
     	        {errorMismatch(yylineno);exit(0);}
@@ -207,15 +235,15 @@ Exp : LPAREN Exp RPAREN {$$ = $2;}
 		bool is_symbol =symbols_tables.findSymbol(name, &entry);
 	    if(!is_symbol || (entry.is_func))
             {errorUndef(yylineno, name); exit(0);}
-	     $$ = new Type(entry.type);
+
+		$$ = new Type(entry.type);
         }
 
 
 	| Call {$$=$1;}
 
-	| NUM {
-	    $$ = new Type("INT");
-	}
+	| NUM { $$ = new Type("INT");}
+
 	| NUM B {
 		int val =((Num*)$1)->value;
 		string str = to_string(val);
