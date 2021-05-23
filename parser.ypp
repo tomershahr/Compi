@@ -11,6 +11,8 @@
 	extern int yylex();
 	extern char* yytext;
 	void yyerror(const char*);
+	bool compareTypes(Node* token, string type);
+	bool isNumber(Node* token);
 	SymbolTables symbols_tables;
 	string ret_type; //curr function ret type
 
@@ -133,14 +135,15 @@ Statement : LBRACE Statements RBRACE {}
 		  | SWITCH LPAREN Exp RPAREN LBRACE CaseList RBRACE {};
 */
 Call : ID LPAREN ExpList RPAREN { string id = ((Id*)$1)->name;
-                                   Entry* entry;
-                                    bool is_symbol = symbols_tables.findSymbol(id, entry);
-                                   if(!is_symbol || !entry->is_func){//todo: check if ID is not a func
+                                   Entry entry;
+                                    bool is_symbol = symbols_tables.findSymbol(id, &entry);
+
+                                   if(!is_symbol || !entry.is_func){//todo: check if ID is not a func
                                     errorUndefFunc(yylineno, id);
                                     exit(0);
                                    }
                                   vector<string> exp_types = ((ExpList*)$3)->types;
-                                  vector<string> func_types = entry->args_types;
+                                  vector<string> func_types = entry.args_types;
                                   if(exp_types != func_types){
                                     errorPrototypeMismatch(yylineno, id, func_types);
                                     exit(0);
@@ -148,14 +151,14 @@ Call : ID LPAREN ExpList RPAREN { string id = ((Id*)$1)->name;
 
                         }
 	 | ID LPAREN RPAREN {   string id = ((Id*)$1)->name;
-                            Entry* entry;
-                             bool is_symbol = symbols_tables.findSymbol(id, entry);
-                            if(!is_symbol || !entry->is_func){
+                            Entry entry;
+                             bool is_symbol = symbols_tables.findSymbol(id, &entry);
+                            if(!is_symbol || !entry.is_func){
                              errorUndefFunc(yylineno, id);
                              exit(0);
                             }
-                            if(!entry->args_types.empty())
-                                errorPrototypeMismatch(yylineno, id, entry->args_types); //todo: need to check if it the correct error.
+                            if(!entry.args_types.empty())
+                                errorPrototypeMismatch(yylineno, id, entry.args_types); //todo: need to check if it the correct error.
                                 exit(0);
                             };
 
@@ -200,11 +203,11 @@ Exp : LPAREN Exp RPAREN {$$ = $2;}
 
 	| ID {
 	    string name = ((Id*)$1)->name;
-	    Entry* entry;
-		bool is_symbol =symbols_tables.findSymbol(name, entry);
-	    if(!is_symbol || (entry->is_func))
+	    Entry entry;
+		bool is_symbol =symbols_tables.findSymbol(name, &entry);
+	    if(!is_symbol || (entry.is_func))
             {errorUndef(yylineno, name); exit(0);}
-	     $$ = new Type(entry->type);
+	     $$ = new Type(entry.type);
         }
 
 
@@ -266,6 +269,18 @@ CaseList : CaseDecl CaseList {printProductionRule(48);}
 CaseDecl : CASE NUM COLON Statements {printProductionRule(51);};
 */
 %%
+
+bool compareTypes(Node* token, string type){
+    string node_type = ((Type*)token)->type;
+    return (node_type == type);
+}
+
+bool isNumber(Node* token){
+    if(compareTypes(token,"INT") || compareTypes(token,"BYTE")) return true;
+    return false;
+}
+
+
 void yyerror(const char*){
     errorSyn(yylineno);
     exit(0);

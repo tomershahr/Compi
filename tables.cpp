@@ -18,6 +18,26 @@ public:
     Entry(string _name,string _type,int _offset) : name(_name), type(_type), offset(_offset), args_types(vector<string>()),  is_func(false){} //for varible
 
     Entry(string _name,string _type, vector<string> args): name(_name), type(_type), offset(0), args_types(args), is_func(true){} //for func
+    Entry& operator=(const Entry& e){
+
+        this->name = e.name;
+        this->type = e.type;
+        this->offset = e.offset;
+        this->args_types = e.args_types;
+        this->is_func = e.is_func;
+
+        return *this;
+    }
+
+    void printE(){
+        cout<<"---------------------------------"<<endl;
+        cout<<"- name = "<<name<<endl;
+        cout<<"- type = "<<type<<endl;
+        cout<<"- offset = "<<offset<<endl;
+        cout<<"- isfunc = "<<is_func<<endl;
+        //cout<<"- types = "<<args_types<<endl;
+        cout<<"---------------------------------"<<endl;
+    }
 };
 
 /*
@@ -70,7 +90,7 @@ public:
             for (unsigned int i = 0; i < curr.size(); i++) {
                 if (curr[i].name.compare(name) == 0){
                     if(entry!=nullptr){
-                        entry = &curr[i];
+                        *entry = curr[i];
                     }
                     return true;
                 }
