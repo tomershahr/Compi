@@ -102,21 +102,4 @@ public:
     }
 };
 
-
-//--------------------------------Utilities Functions--------------------------//
-/*
-bool compareTypes(Node* token, string type){
-    string node_type = ((Type*)token)->type;
-    return (node_type == type);
-}
-
-
-
-
-bool isNumber(Node* token){
-    if(compareTypes(token,"INT") || compareTypes(token,"BYTE")) return true;
-    return false;
-}
-
-*/
 #endif //HW3_NODES_HPP
