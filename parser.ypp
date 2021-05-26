@@ -16,6 +16,7 @@
 	SymbolTables symbols_tables;
 	string ret_type; //curr function ret type
 
+
 %}
 
 %nonassoc VOID
@@ -54,9 +55,7 @@
 
 %%
 Program : Funcs {
-                 if(symbols_tables.getSymbolType("main").compare("VOID")!=0 || !symbols_tables.getFuncArgs("main").empty())
-                            {errorMainMissing(); exit(0);}
-                 symbols_tables.closeScope(regular_scope);
+
                 };
 Funcs : {}
 	  | FuncDecl Funcs {};
@@ -89,9 +88,7 @@ FuncDecl1 : RetType ID LPAREN Formals RPAREN LBRACE {
                                                       }
                                                     };
 
-FuncDec2 :  Statements RBRACE { symbols_tables.closeScope(regular_scope);
-                                //tables.pop_back(); offsets.pop_back();
-                                };
+FuncDec2 :  Statements RBRACE { symbols_tables.closeScope(regular_scope); };
 
 RetType : Type {$$ = $1;}
 		| VOID {$$ = $1;};
@@ -188,7 +185,7 @@ Statement : LBRACE openScopeMark Statements RBRACE {symbols_tables.closeScope(re
 
 
 
-		  | SWITCH LPAREN Exp RPAREN openSwitchScopeMark LBRACE CaseList RBRACE {
+		  | SwitchExp openSwitchScopeMark LBRACE CaseList RBRACE {
 		        symbols_tables.closeScope(switch_scope);
 		  };
 
@@ -202,18 +199,14 @@ Call : ID LPAREN ExpList RPAREN { string id = ((Id*)$1)->name;
                                    }
                                   vector<string> exp_types = ((ExpList*)$3)->types;
                                   vector<string> func_types = entry.args_types;
-                                   if(exp_types.size()!= exp_types.size()){
+                                   if(exp_types.size()!= func_types.size()){
                                     errorPrototypeMismatch(yylineno, id, func_types);
-                                    delete $1;
-                                    delete $3;
                                       exit(0);
                                    }
 
                                   for(unsigned int i =0 ; i<exp_types.size();i++){
                                     if(func_types[i] != exp_types[i] &&(func_types[i]!= "INT" || exp_types[i]!= "BYTE")){
                                         errorPrototypeMismatch(yylineno, id, func_types);
-                                        delete $1;
-                                        delete $3;
                                         exit(0);
                                     }
                                   }
@@ -329,7 +322,7 @@ Exp : LPAREN Exp RPAREN {$$ = $2;}
 	    if(!isNumber($1) || !isNumber($3))
     	        {errorMismatch(yylineno);exit(0);}
     	$$ = new Type("BOOL");
-    }
+    };
 
 
 
@@ -341,17 +334,22 @@ CaseDecl : CASE NUM COLON Statements {};
 
 
 //additions
-openScopeMark : {symbols_tables.openScope(regular_scope);}
 
-closeScopeMark : {symbols_tables.closeScope(regular_scope);}
+SwitchExp : SWITCH LPAREN Exp RPAREN {string type = ((Type*)$3)->type;
+										if(type != "INT" && type != "BYTE")
+										{errorMismatch(yylineno); exit(0);}};
 
-openWhileScopeMark : {symbols_tables.openScope(while_scope);}
+openScopeMark : {symbols_tables.openScope(regular_scope);};
 
-openSwitchScopeMark : {symbols_tables.openScope(switch_scope);}
+closeScopeMark : {symbols_tables.closeScope(regular_scope);};
+
+openWhileScopeMark : {symbols_tables.openScope(while_scope);};
+
+openSwitchScopeMark : {symbols_tables.openScope(switch_scope);};
 
 ExpBool : Exp{
     if(!compareTypes($1, "BOOL")){errorMismatch(yylineno); exit(0);}
-}
+};
 %%
 
 bool compareTypes(Node* token, string type){
@@ -365,8 +363,7 @@ bool isNumber(Node* token){
 }
 
 
-void yyerror(const char* m){
-    cout<<m<<endl;
+void yyerror(const char*){
     errorSyn(yylineno);
     exit(0);
 }
@@ -374,5 +371,11 @@ void yyerror(const char* m){
 
 
 int main() {
-	return yyparse();
+	int res = yyparse();
+	if(res == 0){
+		if(symbols_tables.getSymbolType("main").compare("VOID")!=0 || !symbols_tables.getFuncArgs("main").empty())
+					{errorMainMissing(); exit(0);}
+		 symbols_tables.closeScope(regular_scope);
+	}
+	return res;
 }
