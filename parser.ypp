@@ -156,24 +156,23 @@ Statement : LBRACE openScopeMark Statements RBRACE {symbols_tables.closeScope(re
 		                }
 
 		  | RETURN Exp SC { string type = ((Type*)$2)->type;
-		                    if(ret_type.compare(type)!=0){errorMismatch(yylineno); exit(0);}};
+		                    if(ret_type.compare(type)!=0 && (ret_type != "INT" || type != "BYTE")){
+		                    errorMismatch(yylineno); exit(0);}};
 
 
-		  | IF LPAREN Exp RPAREN openScopeMark Statement
+		  | IF LPAREN ExpBool RPAREN openScopeMark Statement
 		  {
-		      if(!compareTypes($3, "BOOL")){errorMismatch(yylineno); exit(0);}//todo:check if it fine here
               symbols_tables.closeScope(regular_scope);
 		  }
 
 
-		  | IF LPAREN Exp RPAREN  openScopeMark Statement  ELSE  closeScopeMark openScopeMark Statement{
-		  	    if(!compareTypes($3, "BOOL")){errorMismatch(yylineno); exit(0);}//todo:check if it fine here
+
+		  | IF LPAREN ExpBool RPAREN  openScopeMark Statement  ELSE  closeScopeMark openScopeMark Statement{
 		        symbols_tables.closeScope(regular_scope);
 		  }
 
 
-		  | WHILE LPAREN Exp RPAREN openWhileScopeMark Statement {
-		        if(!compareTypes($3, "BOOL")){errorMismatch(yylineno); exit(0);}//todo:check if it fine here
+		  | WHILE LPAREN ExpBool RPAREN openWhileScopeMark Statement {
             	symbols_tables.closeScope(while_scope);
 		  }
 
@@ -257,7 +256,7 @@ Exp : LPAREN Exp RPAREN {$$ = $2;}
 
 	    if(!isNumber($1) || !isNumber($3))
     	        {errorMismatch(yylineno);exit(0);}
-    	if(compareTypes($1,"INT")|| compareTypes($2,"INT"))
+    	if(compareTypes($1,"INT")|| compareTypes($3,"INT"))
     	    {$$ = new Type("INT");}
     	else{$$ = new Type("BYTE");}
     	delete $1;
@@ -267,11 +266,10 @@ Exp : LPAREN Exp RPAREN {$$ = $2;}
 	| Exp PLUS_MINUS Exp {
 	        if(!isNumber($1) || !isNumber($3))
         	        {errorMismatch(yylineno);exit(0);}
-        	if(compareTypes($1,"INT")|| compareTypes($2,"INT"))
+        	if(compareTypes($1,"INT")|| compareTypes($3,"INT"))
         	    {$$ = new Type("INT");}
-        	else{$$ = new Type("BYTE");}
-        	delete $1;
-        	delete $3;
+        	else{$$ = new Type("BYTE");
+        	}
 	}
 
 
@@ -281,7 +279,6 @@ Exp : LPAREN Exp RPAREN {$$ = $2;}
 		bool is_symbol =symbols_tables.findSymbol(name, &entry);
 	    if(!is_symbol || (entry.is_func))
             {errorUndef(yylineno, name); exit(0);}
-
 		$$ = new Type(entry.type);
         }
 
@@ -352,6 +349,9 @@ openWhileScopeMark : {symbols_tables.openScope(while_scope);}
 
 openSwitchScopeMark : {symbols_tables.openScope(switch_scope);}
 
+ExpBool : Exp{
+    if(!compareTypes($1, "BOOL")){errorMismatch(yylineno); exit(0);}
+}
 %%
 
 bool compareTypes(Node* token, string type){
