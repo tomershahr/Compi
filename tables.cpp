@@ -2,7 +2,7 @@
 #include <vector>
 #include <iostream>
 #include "hw3_output.hpp"
-
+enum scope_type{regular_scope,while_scope,switch_scope};
 using namespace std;
 using namespace output;
 
@@ -52,12 +52,14 @@ public:
 typedef vector<Entry> Table;
 
 class SymbolTables{
-    int curr_offset;
+    int curr_func_offset;
     vector<Table> tables;
     vector<int> offsets;
+    int while_number;
+    int switch_number;
 
 public:
-    SymbolTables(): curr_offset(0){
+    SymbolTables(): curr_func_offset(0),while_number(0),switch_number(0){
         Table global;
         global.push_back(Entry("print", "VOID",vector<string>(1, "STRING")));
         global.push_back(Entry("printi", "VOID",vector<string>(1, "INT")));
@@ -74,14 +76,14 @@ public:
     }
 
     void insertFuncArgEntry( string name, string type){
-        tables[tables.size()-1].push_back(Entry(name, type, curr_offset--));
+        tables[tables.size()-1].push_back(Entry(name, type, curr_func_offset--));
     }
 
     void insertFuncEntry(string name, string type, vector<string> args){
         tables[tables.size()-1].push_back(Entry(name, type, args));
         offsets.push_back(offsets.back());
         tables.push_back(Table());
-        curr_offset =-1;
+        curr_func_offset =-1;
     }
 
     bool findSymbol(string name,Entry* entry=nullptr){
@@ -134,21 +136,46 @@ public:
     }
     */
 
-    void closeScope(){
+    void openScope(scope_type scope_type){
+        if(scope_type == while_scope)
+            while_number++;
+        if(scope_type == switch_scope)
+            switch_number++;
+        tables.push_back(Table());
+        offsets.push_back(offsets.back());
+    }
+
+
+    void closeScope(scope_type scope_type){
+        if(scope_type == while_scope)
+            while_number--;
+        if(scope_type == switch_scope)
+            switch_number--;
         endScope();
         Table table = tables.back();
         for(unsigned int i=0; i< table.size(); i++){
             string name = table[i].name;
             string types =  table[i].type;
-
             if(table[i].is_func){
                 vector<string> args = getFuncArgs(name);
                 types =makeFunctionType(types, args);
             }
-
             printID(name , table[i].offset, types);
         }
         offsets.pop_back();
         tables.pop_back();
     }
+
+    bool insideWhile(){
+        if(while_number>0)
+            return true;
+        return false;
+    }
+
+    bool insideSwitch(){
+        if(switch_number>0)
+            return true;
+        return false;
+    }
+
 };

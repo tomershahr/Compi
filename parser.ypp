@@ -53,8 +53,10 @@
 
 
 %%
-Program : Funcs {   if(symbols_tables.getSymbolType("main").compare("VOID")!=0 || !symbols_tables.getFuncArgs("main").empty() ){errorMainMissing(); exit(0);}
-                    symbols_tables.closeScope();
+Program : Funcs {
+                 if(symbols_tables.getSymbolType("main").compare("VOID")!=0 || !symbols_tables.getFuncArgs("main").empty())
+                            {errorMainMissing(); exit(0);}
+                 symbols_tables.closeScope(regular_scope);
                 };
 Funcs : {}
 	  | FuncDecl Funcs {};
@@ -72,17 +74,13 @@ FuncDecl1 : RetType ID LPAREN Formals RPAREN LBRACE {
                                                       }
 
                                                       if($4 == nullptr){
-
                                                           symbols_tables.insertFuncEntry(func_name, ((Type*)$1)->type, vector<string>());
                                                        }
                                                       else{
                                                           vector<string> args_t = ((Arguments*)$4)->types;
-                                                           vector<string> args_n = ((Arguments*)$4)->names;
-                                                           symbols_tables.insertFuncEntry(func_name, ((Type*)$1)->type, args_t);
-
-
+                                                          vector<string> args_n = ((Arguments*)$4)->names;
+                                                          symbols_tables.insertFuncEntry(func_name, ((Type*)$1)->type, args_t);
                                                           for(unsigned int i=0; i<args_t.size();i++){
-
                                                             string var_name = args_n[i];
                                                             if(symbols_tables.findSymbol(var_name)){
                                                                       errorDef(yylineno, var_name); exit(0);}
@@ -91,7 +89,7 @@ FuncDecl1 : RetType ID LPAREN Formals RPAREN LBRACE {
                                                       }
                                                     };
 
-FuncDec2 :  Statements RBRACE { symbols_tables.closeScope();
+FuncDec2 :  Statements RBRACE { symbols_tables.closeScope(regular_scope);
                                 //tables.pop_back(); offsets.pop_back();
                                 };
 
@@ -109,7 +107,7 @@ FormalDecl : Type ID {$$ = new Arguments($1, $2);};
 Statements : Statement {}
 		   | Statements Statement {};
 
-Statement : LBRACE Statements RBRACE {}
+Statement : LBRACE openScopeMark Statements RBRACE {symbols_tables.closeScope(regular_scope);}
 
 		  | Type ID SC {
 		  string type = ((Type*)$1)->type;
@@ -152,19 +150,49 @@ Statement : LBRACE Statements RBRACE {}
                                 }
 		  }
 		  | Call SC {}
-		  | RETURN SC { if(ret_type.compare("VOID")!=0){errorMismatch(yylineno); exit(0);} }
+
+		  | RETURN SC {if(ret_type.compare("VOID")!=0)
+		                {errorMismatch(yylineno); exit(0);}
+		                }
 
 		  | RETURN Exp SC { string type = ((Type*)$2)->type;
 		                    if(ret_type.compare(type)!=0){errorMismatch(yylineno); exit(0);}};
 
-/*
-		  | IF LPAREN Exp RPAREN Statement {}
-		  | IF LPAREN Exp RPAREN Statement ELSE Statement {}
-		  | WHILE LPAREN Exp RPAREN Statement {}
-		  | BREAK SC {}
-		  | CONTINUE SC {}
-		  | SWITCH LPAREN Exp RPAREN LBRACE CaseList RBRACE {};
-*/
+
+		  | IF LPAREN Exp RPAREN openScopeMark Statement
+		  {
+		      if(!compareTypes($3, "BOOL")){errorMismatch(yylineno); exit(0);}//todo:check if it fine here
+              symbols_tables.closeScope(regular_scope);
+		  }
+
+
+		  | IF LPAREN Exp RPAREN  openScopeMark Statement closeScopeMark ELSE openScopeMark Statement{
+		  	    if(!compareTypes($3, "BOOL")){errorMismatch(yylineno); exit(0);}//todo:check if it fine here
+		        symbols_tables.closeScope(regular_scope);
+		  }
+
+
+		  | WHILE LPAREN Exp RPAREN openWhileScopeMark Statement {
+		        if(!compareTypes($3, "BOOL")){errorMismatch(yylineno); exit(0);}//todo:check if it fine here
+            	symbols_tables.closeScope(while_scope);
+		  }
+
+		  | BREAK SC {
+		        if(!symbols_tables.insideWhile() && !symbols_tables.insideSwitch())
+		                    {errorUnexpectedBreak(yylineno);exit(0);}
+		  }
+
+		  | CONTINUE SC {
+		        if(!symbols_tables.insideWhile())
+                		     {errorUnexpectedContinue(yylineno);exit(0);}
+		  }
+
+
+
+		  | SWITCH LPAREN Exp RPAREN openSwitchScopeMark LBRACE CaseList RBRACE {
+		        symbols_tables.closeScope(switch_scope);
+		  };
+
 Call : ID LPAREN ExpList RPAREN { string id = ((Id*)$1)->name;
                                    Entry entry;
                                     bool is_symbol = symbols_tables.findSymbol(id, &entry);
@@ -295,13 +323,23 @@ Exp : LPAREN Exp RPAREN {$$ = $2;}
     }
 
 
-/*
-CaseList : CaseDecl CaseList {printProductionRule(48);}
-		 | CaseDecl {printProductionRule(49);}
-		 | DEFAULT COLON Statements {printProductionRule(50);};
 
-CaseDecl : CASE NUM COLON Statements {printProductionRule(51);};
-*/
+CaseList : CaseDecl CaseList {}
+		 | CaseDecl {}
+		 | DEFAULT COLON Statements {};
+
+CaseDecl : CASE NUM COLON Statements {};
+
+
+//additions
+openScopeMark : {symbols_tables.openScope(regular_scope);}
+
+closeScopeMark : {symbols_tables.closeScope(regular_scope);}
+
+openWhileScopeMark : {symbols_tables.openScope(while_scope);}
+
+openSwitchScopeMark : {symbols_tables.openScope(switch_scope);}
+
 %%
 
 bool compareTypes(Node* token, string type){
@@ -319,6 +357,8 @@ void yyerror(const char*){
     errorSyn(yylineno);
     exit(0);
 }
+
+
 
 int main() {
 	return yyparse();
