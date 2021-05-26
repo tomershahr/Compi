@@ -166,7 +166,7 @@ Statement : LBRACE openScopeMark Statements RBRACE {symbols_tables.closeScope(re
 		  }
 
 
-		  | IF LPAREN Exp RPAREN  openScopeMark Statement closeScopeMark ELSE openScopeMark Statement{
+		  | IF LPAREN Exp RPAREN  openScopeMark Statement  ELSE  closeScopeMark openScopeMark Statement{
 		  	    if(!compareTypes($3, "BOOL")){errorMismatch(yylineno); exit(0);}//todo:check if it fine here
 		        symbols_tables.closeScope(regular_scope);
 		  }
@@ -203,10 +203,22 @@ Call : ID LPAREN ExpList RPAREN { string id = ((Id*)$1)->name;
                                    }
                                   vector<string> exp_types = ((ExpList*)$3)->types;
                                   vector<string> func_types = entry.args_types;
-                                  if(exp_types != func_types){
+                                   if(exp_types.size()!= exp_types.size()){
                                     errorPrototypeMismatch(yylineno, id, func_types);
-                                    exit(0);
+                                    delete $1;
+                                    delete $3;
+                                      exit(0);
+                                   }
+
+                                  for(unsigned int i =0 ; i<exp_types.size();i++){
+                                    if(func_types[i] != exp_types[i] &&(func_types[i]!= "INT" || exp_types[i]!= "BYTE")){
+                                        errorPrototypeMismatch(yylineno, id, func_types);
+                                        delete $1;
+                                        delete $3;
+                                        exit(0);
+                                    }
                                   }
+
 								  $$=new Type(entry.type);
 								  delete $1;
 								  delete $3;
@@ -353,7 +365,8 @@ bool isNumber(Node* token){
 }
 
 
-void yyerror(const char*){
+void yyerror(const char* m){
+    cout<<m<<endl;
     errorSyn(yylineno);
     exit(0);
 }
