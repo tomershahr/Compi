@@ -152,7 +152,9 @@ Statement : LBRACE openScopeMark Statements RBRACE {symbols_tables.closeScope(re
 		                {errorMismatch(yylineno); exit(0);}
 		                }
 
-		  | RETURN Exp SC { string type = ((Type*)$2)->type;
+		  | RETURN Exp SC { if(ret_type.compare("VOID")==0)
+		                {errorMismatch(yylineno); exit(0);}
+							string type = ((Type*)$2)->type;
 		                    if(ret_type.compare(type)!=0 && (ret_type != "INT" || type != "BYTE")){
 		                    errorMismatch(yylineno); exit(0);}};
 
