@@ -141,8 +141,9 @@ Statement : LBRACE openScopeMark Statements RBRACE {symbols_tables.closeScope(re
                                       exit(0);
                                 }
                                 string type2 = ((Type*)$3)->type;
-                                if(entry1.type.compare(type2)!=0 &&(!compareTypes($1, "INT") || !compareTypes($3, "BYTE"))){
-                                    errorMismatch(yylineno);
+								string type1 = ((Type*)$1)->type;
+                                if(entry1.type.compare(type2)!=0 &&(entry1.type!= "INT" || !compareTypes($3, "BYTE"))){
+									errorMismatch(yylineno);
                                     exit(0);
                                 }
 		  }
